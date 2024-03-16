@@ -6,7 +6,6 @@ import numpy as np
 from langchain.evaluation import load_evaluator, ExactMatchStringEvaluator
 import os
 import torch
-import json
 import logging
 
 """
@@ -17,8 +16,8 @@ TODO
 def create_arg_parser():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--model", "-m", required=True, help="Transformer to train and test.", type=str)
-    parser.add_argument("--languages", "-l", required=True, help="List of Wals codes to be learned.", type=json.loads)
+    parser.add_argument("--languages", "-l", required=True, nargs='+', help="List of Wals-codes to be trained on", type=str)
+    parser.add_argument("--model_size", "-m", required=False, help="Size of the byT5 model.", type=str, default="small")
 
     args = parser.parse_args()
     return args
@@ -174,8 +173,8 @@ if __name__ == "__main__":
 
     # Extract command line arguments
     args = create_arg_parser()
-    model_name = args.model
-    language = args.languages.pop()
+    model_name = "googe/byt5-" + args.model.size
+    languages = args.languages
 
     # Set up logging
     logging.basicConfig(filename="logs.log", encoding="utf-8", level=logging.DEBUG)
@@ -195,13 +194,16 @@ if __name__ == "__main__":
     datasets = DatasetDict()
 
     for split in ("trn", "dev", "tst"):
-        df = preprocess(f"data/{language}.{split}")
+        df = pd.concat([preprocess(f"data/{lang}.{split}") for lang in languages], ignore_index=True)
         datasets[split] = Dataset.from_pandas(df)
 
     tokenized_datasets = datasets.map(
         lambda x: tokenize(x, tokenizer, max_source_length, max_target_length),
         batched=True
         )
+    
+    # Shuffle the languages so the model does not learn them in order
+    tokenized_datasets["trn"] = tokenized_datasets["trn"].shuffle()
     
     # Only keep columns needed for training: input_ids, attention_mask, labels
     for split in tokenized_datasets:
