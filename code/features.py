@@ -34,3 +34,6 @@ if __name__ == "__main__":
     # and have annotations for all 12 morphological features
     wals_codes = ["aeg", "eng", "fin", "fre", "geo", "ger", "heb", "hun", "jpn", "rus", "spa", "swa", "tur"]
     df = df.loc[df["wals_code"].isin(wals_codes)]    
+
+    # Save predictions
+    df.to_json("features.jsonl", lines=True, orient="records")
