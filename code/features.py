@@ -1,11 +1,32 @@
 import pandas as pd
+import itertools
+
+
+def get_feature_combinations(features, wals_codes):
+    # Collect the available languages for every unique combination of features
+    # The key is a tuple of features, the value is a list with languages that 
+    # have annotation for each of the features.
+    results = dict()
+
+    for length in range(1, len(features) + 1):
+        for combination in itertools.combinations(features, length):
+            # Get the row of the language and select the columns of the features in the current subset
+            # a language is stored if it does not have any NaNs for any of the features/columns
+            results[combination] = [
+                wals_code for wals_code in wals_codes
+                if not df.loc[df["wals_code"] == wals_code][list(combination)].isna().any().any()
+                ]
+
+    return results
+
 
 if __name__ == "__main__":
-    # Read in the wals data.
+
+    # Read in the WALS data.
     df = pd.read_csv("data/wals.csv")
 
     # The data consists of 10 columns with general information, followed by 192
-    # features, 12 of which are morphological.
+    # columns with features, 12 of which are morphological.
     general_information = [
         "wals_code", "iso_code", "glottocode", "Name", "latitude",
         "longitude", "genus", "family", "macroarea", "countrycodes"
@@ -26,14 +47,36 @@ if __name__ == "__main__":
         "29A Syncretism in Verbal Person/Number Marking": ["No subject person/number marking", "Subject person/number marking is syncretic", "Subject person/number marking is never syncretic"],
     }
 
-    # Keep only the general information and morphological features.
+    # Keep only the general information and morphological feature columns.
     keep_columns = general_information + list(morphological_features.keys())
     df = df[keep_columns]
 
-    # Only select languages that are available in both the shared task and WALS
-    # and have annotations for all 12 morphological features
-    wals_codes = ["aeg", "eng", "fin", "fre", "geo", "ger", "heb", "hun", "jpn", "rus", "spa", "swa", "tur"]
-    df = df.loc[df["wals_code"].isin(wals_codes)]    
+    # Only select languages that are available in both WALS and the shared task (23)
+    wals_codes = ["alb", "amh", "aeg", "arg", "arm", "dsh", "eng", "fin", "fre", "geo", "ger", "heb", "hun", "ita", "jpn", "khg", "mcd", "nav", "blr", "rus", "spa", "swa", "tur"]
+    df = df.loc[df["wals_code"].isin(wals_codes)]
 
-    # Save predictions
+    # If you want to explore the optimal combination of number of features and
+    # languages with annotations for those features, set explore to True.
+    explore = False
+    min_number_features = 12
+    min_number_languages = 1
+
+    if explore:
+        # Collect all the annotated languages for every combination of features.
+        feature_combinations = get_feature_combinations(morphological_features, wals_codes) 
+
+        # Get combinations that meet a minimum number of features/languages
+        valid_feature_combinations = dict(filter(
+            lambda x: len(x[0]) >= min_number_features and len(x[1]) >= min_number_languages,
+            feature_combinations.items()
+            ))
+        
+        print(valid_feature_combinations)
+            
+    # With a minimum number of features of 12, there are 13 languages available.
+    # Remove the other languages.
+    selected_wals_codes = ["aeg", "eng", "fin", "fre", "geo", "ger", "heb", "hun", "jpn", "rus", "spa", "swa", "tur"]
+    df = df.loc[df["wals_code"].isin(selected_wals_codes)]    
+
+    # Save to file.
     df.to_json("features.jsonl", lines=True, orient="records")
