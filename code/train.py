@@ -1,5 +1,4 @@
 from transformers import AutoTokenizer, T5ForConditionalGeneration, DataCollatorForSeq2Seq, Seq2SeqTrainingArguments, Seq2SeqTrainer, EarlyStoppingCallback
-from peft import get_peft_model, LoraConfig, TaskType, PeftModel, PeftConfig
 from datasets import Dataset, DatasetDict
 import pandas as pd
 import argparse
@@ -13,10 +12,9 @@ import logging
 def create_arg_parser():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--languages", "-l", required=False, nargs="+", help="List of Wals-codes to be trained on.", type=str, default="amh arz dan eng fin fra grc heb hun hye ita jap kat mkd rus spa swa tur nav afb sqi deu sme bel klr san")
+    parser.add_argument("--languages", "-l", required=False, nargs="+", help="List of Wals-codes to be trained on.", type=str)
     parser.add_argument("--model_size", "-ms", required=False, help="Size of the byT5 model.", type=str, default="base", choices=["small", "base", "large", "xl", "xxl"])
     parser.add_argument("--remove_features", "-rf", required=False, help="Train without the features.", action="store_true")
-    parser.add_argument("--parameter_efficient_fine_tuning", "-peft", required=False, help="Use parameter efficient fine-tuning.", action="store_true")
     parser.add_argument("--output_file_path", "-o", required=False, help="Path to output file.", type=str, default="predictions.jsonl")
     
     args = parser.parse_args()
@@ -103,24 +101,17 @@ def compute_metrics(eval_pred):
     return {"accuracy": avg_accuracy, "levenshtein": avg_levensthein_distance}
 
 
-def fine_tune(model_name, tokenizer, tokenized_datasets, peft):
+def fine_tune(model_name, tokenizer, tokenized_datasets):
 
     # Load the model.
     model = T5ForConditionalGeneration.from_pretrained(model_name)
-    
-    # Use parameter-efficient fine-tuning if enabled.
-    if peft:
-        peft_config = LoraConfig(
-            task_type=TaskType.SEQ_2_SEQ_LM, inference_mode=False, r=8, lora_alpha=32, lora_dropout=0.1
-        )
-        model = get_peft_model(model, peft_config)
 
     train_args = Seq2SeqTrainingArguments(
         output_dir=model_name,
         evaluation_strategy="epoch",
         #eval_steps=100,
         logging_strategy="steps",
-        logging_steps=100,
+        logging_steps=1000,
         save_strategy="epoch",
         #save_steps=200,
         learning_rate=1e-4,
@@ -146,7 +137,7 @@ def fine_tune(model_name, tokenizer, tokenized_datasets, peft):
         data_collator=data_collator,
         tokenizer=tokenizer,
         compute_metrics=compute_metrics,
-        callbacks = [EarlyStoppingCallback(early_stopping_patience=3)]
+        callbacks = [EarlyStoppingCallback(early_stopping_patience=2)]
     )
 
     trainer.train()
@@ -158,16 +149,11 @@ def fine_tune(model_name, tokenizer, tokenized_datasets, peft):
         os.makedirs(best_model_path)
     
     trainer.save_model(best_model_path)
+    
 
-
-def test(model_path, test_tokenized_dataset, max_length, peft):
+def test(model_path, test_tokenized_dataset, max_length):
     # Load the best model.
-    if peft:
-        config = PeftConfig.from_pretrained(model_path)
-        base_model = T5ForConditionalGeneration.from_pretrained(config.base_model_name_or_path)
-        model = PeftModel.from_pretrained(base_model, model_path)
-    else:
-        model = T5ForConditionalGeneration.from_pretrained(model_path)
+    model = T5ForConditionalGeneration.from_pretrained(model_path)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = model.to(device)
@@ -203,8 +189,8 @@ if __name__ == "__main__":
     args = create_arg_parser()
     model_name = "google/byt5-" + args.model_size
     remove_features = args.remove_features
-    languages = args.languages 
-    peft = args.parameter_efficient_fine_tuning
+    all_languages = ["amh", "arz", "dan", "eng", "fin", "fra", "grc", "heb", "hun", "hye", "ita", "jap", "kat", "mkd", "rus", "spa", "swa", "tur", "nav", "afb", "sqi", "deu", "sme", "bel", "klr", "san"]
+    languages = args.languages if args.languages else all_languages
     output_file_path = args.output_file_path
     
     # Set up logging.
@@ -243,10 +229,10 @@ if __name__ == "__main__":
 
     # Finetune and test the model.
     print("Fine tuning...")
-    fine_tune(model_name, tokenizer, tokenized_datasets, peft)
+    fine_tune(model_name, tokenizer, tokenized_datasets)
 
     print("Predicting...")
-    results, predictions = test(f"{model_name}/best", tokenized_datasets["tst"], max_length, peft)
+    results, predictions = test(f"{model_name}/best", tokenized_datasets["tst"], max_length)
 
     # Save results/predictions.
     predictions_df = pd.DataFrame({"label": predictions, "language": datasets["tst"]["language"]})
