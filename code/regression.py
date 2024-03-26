@@ -5,6 +5,8 @@ from sklearn.linear_model import LinearRegression
 import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn.metrics import PredictionErrorDisplay
+from sklearn.neural_network import MLPRegressor
+from sklearn.preprocessing import StandardScaler
 
 
 # Read in the data.
@@ -30,7 +32,19 @@ regressor = LinearRegression(n_jobs=-1)
 regressor.fit(X_train, y_train)
 predictions = regressor.predict(X_test)
 
-# And using cross-validation.
+# Standardize the features by scaling
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Initialize and train the MLPRegressor
+mlp_regressor = MLPRegressor(hidden_layer_sizes=(100, 50), activation='relu', solver='adam', random_state=42)
+mlp_regressor.fit(X_train_scaled, y_train)
+
+# Predict accuracy scores on the test set
+mlp_predictions = mlp_regressor.predict(X_test_scaled)
+
+# And a linear regression using cross-validation.
 cv_regressor = LinearRegression(n_jobs=-1)
 cv = KFold(n_splits=5, random_state=0, shuffle=True)
 cv_predictions = cross_val_predict(cv_regressor, features, target, cv=cv, n_jobs=-1)
@@ -59,10 +73,12 @@ fig.suptitle("Plotting cross-validated predictions")
 plt.tight_layout()
 plt.show()
 
-# Evaluate both linear regression models.
+# Evaluate both linear regression models and MLP.
 for metric in [mean_absolute_error, mean_squared_error]:
     print("train_test_split", metric.__name__, metric(y_test, predictions))
     print("cross-validation", metric.__name__, metric(target, cv_predictions))
+    print("mlp", metric.__name__, metric(y_test, mlp_predictions))
+
 
 # Print out the features from best to worst.
 selector = SelectKBest(r_regression, k="all").fit(X_train, y_train)
