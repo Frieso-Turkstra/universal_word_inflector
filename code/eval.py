@@ -1,5 +1,5 @@
 import pandas as pd
-from langchain.evaluation import ExactMatchStringEvaluator
+from langchain.evaluation import load_evaluator, ExactMatchStringEvaluator
 import numpy as np
 import argparse
 
@@ -23,7 +23,7 @@ if __name__ == "__main__":
     df.set_index("language", inplace=True)
 
     # Get scores per language
-    scores = dict()
+    scores = []
     for language in languages:
 
         # Get the predictions and labels for `language`.
@@ -39,15 +39,27 @@ if __name__ == "__main__":
             lambda x: evaluator.evaluate_strings(prediction=x[0], reference=x[1])["score"],
             zip(predictions, labels)
             )))
+        
+        # Compute Levenshtein distance.
+        levenshtein_evaluator = load_evaluator(
+            "string_distance",
+            distance='levenshtein'
+        )
+        
+        avg_levensthein_distance = np.mean(list(map(
+            lambda x: levenshtein_evaluator.evaluate_strings(prediction=x[0], reference=x[1])["score"],
+            zip(predictions, labels)
+        )))
 
         # Save score to dictionary.
-        scores[language] = avg_accuracy
+        scores.append((language, avg_accuracy, avg_levensthein_distance))
 
     # Save and print the results.
-    df = pd.DataFrame(scores.items(), columns=["iso_code", "accuracy"])
+    df = pd.DataFrame(scores, columns=["iso_code", "accuracy", "levenshtein"])
     df.to_json(args.output_file_path, lines=True, orient="records")
     
     print(df.sort_values("accuracy", ascending=False))
     print("Average accuracy: ", df["accuracy"].mean())
+    print("Average Levenshtein distance: ", df["levenshtein"].mean())
 
     
