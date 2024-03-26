@@ -3,6 +3,8 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sklearn.feature_selection import SelectKBest, r_regression
 from sklearn.linear_model import LinearRegression
 import pandas as pd
+from matplotlib import pyplot as plt
+from sklearn.metrics import PredictionErrorDisplay
 
 
 # Read in the data.
@@ -32,6 +34,30 @@ predictions = regressor.predict(X_test)
 cv_regressor = LinearRegression(n_jobs=-1)
 cv = KFold(n_splits=5, random_state=0, shuffle=True)
 cv_predictions = cross_val_predict(cv_regressor, features, target, cv=cv, n_jobs=-1)
+
+# Visualize cross-validation predictions.
+fig, axs = plt.subplots(ncols=2, figsize=(8, 4))
+PredictionErrorDisplay.from_predictions(
+    target,
+    y_pred=cv_predictions,
+    kind="actual_vs_predicted",
+    subsample=100,
+    ax=axs[0],
+    random_state=0,
+)
+axs[0].set_title("Actual vs. Predicted values")
+PredictionErrorDisplay.from_predictions(
+    target,
+    y_pred=cv_predictions,
+    kind="residual_vs_predicted",
+    subsample=100,
+    ax=axs[1],
+    random_state=0,
+)
+axs[1].set_title("Residuals vs. Predicted Values")
+fig.suptitle("Plotting cross-validated predictions")
+plt.tight_layout()
+plt.show()
 
 # Evaluate both linear regression models.
 for metric in [mean_absolute_error, mean_squared_error]:
