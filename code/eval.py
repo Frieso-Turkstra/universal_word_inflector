@@ -2,9 +2,6 @@
 This program calculates the exact match accuracy and Levenshtein distance per language.
 It takes as input a file with predictions, automatically infers which labels it
 needs and outputs a file with the evaluation metrics per language.
-
-Author: Frieso Turkstra
-Date: 2024/03/30
 """
 
 from langchain.evaluation import ExactMatchStringEvaluator

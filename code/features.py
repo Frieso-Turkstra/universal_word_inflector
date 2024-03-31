@@ -5,9 +5,6 @@ for each language in the shared task if it has annotations for each feature in
 the combination. Then, the user can specify certain constraints to find the
 optimal feature combination, depending on the user's requirements. The user
 can choose a feature combination to save to a file.
-
-Author: Frieso Turkstra
-Date: 2024/03/30
 """
 
 import pandas as pd

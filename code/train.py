@@ -3,9 +3,6 @@ This program implements a ByT5 model.
 The model is fine-tuned on the task of morphological (re-)inflection
 and evaluated on exact match accuracy and Levenshtein distance.
 The program logs the results and outputs a file with the predictions.
-
-Author: Frieso Turkstra
-Date: 2024/03/30
 """
 
 from langchain.evaluation import ExactMatchStringEvaluator

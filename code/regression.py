@@ -7,9 +7,6 @@ In total, three models generate predictions:
 3) a multi-layer perceptron
 All models are evaluated on Mean Absolute Error and Mean Squared Error.
 Additionally, visualisations can be generated.
-
-Author: Frieso Turkstra
-Date: 2024/03/31
 """
 
 from sklearn.model_selection import train_test_split, KFold, cross_val_predict
