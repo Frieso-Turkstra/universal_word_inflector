@@ -1,5 +1,13 @@
 # universal_word_inflector
 
+## Dependencies
+
+Run the following command to install the necessary dependencies:
+
+```sh
+pip install -r requirements.txt
+```
+
 ## Fine-tune ByT5 
 
 ### Overview
