@@ -47,9 +47,10 @@ python code/features.py --output_file_path features.jsonl
 
 ### Overview
 This program tries to predict the accuracy scores of a language on the task of morphological (re-)inflection based on its morphological features. In total, three models generate predictions:
-1) a linear regression model
-2) a linear regression model with cross-validation
-3) a multi-layer perceptron
+1) Linear regression model with train-test split
+2) Linear regression model with cross-validation
+3) Multi-layer perceptron
+
 All models are evaluated on Mean Absolute Error and Mean Squared Error. Additionally, visualisations can be generated.
 
 ### Command
