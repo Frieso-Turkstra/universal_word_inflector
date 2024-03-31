@@ -1,5 +1,15 @@
+"""
+This program calculates the exact match accuracy and Levenshtein distance per language.
+It takes as input a file with predictions, automatically infers which labels it
+needs and outputs a file with the evaluation metrics per language.
+
+Author: Frieso Turkstra
+Date: 2024/03/30
+"""
+
+from langchain.evaluation import ExactMatchStringEvaluator
+from langchain.evaluation import load_evaluator
 import pandas as pd
-from langchain.evaluation import load_evaluator, ExactMatchStringEvaluator
 import numpy as np
 import argparse
 
@@ -7,30 +17,43 @@ import argparse
 def create_arg_parser():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--input_file_path", "-i", required=True, help="Path to prediction file", type=str)
-    parser.add_argument("--output_file_path", "-o", required=False, help="Path to output file", type=str, default="scores.jsonl")
+    parser.add_argument("--input_file_path", "-i",
+                        required=True,
+                        help="Path to the prediction file.",
+                        type=str,
+                        )
+    parser.add_argument("--output_file_path", "-o",
+                        required=False,
+                        help="Path to the output file.",
+                        type=str,
+                        default="scores.jsonl",
+                        )
     
     args = parser.parse_args()
     return args
 
 
 if __name__ == "__main__": 
+
+    # Extract command line arguments.
     args = create_arg_parser()
+    input_file_path = args.input_file_path
+    output_file_path = args.output_file_path
 
-    # Read in the data
-    df = pd.read_json(args.input_file_path, lines=True)
-    languages = df["language"].unique()
-    df.set_index("language", inplace=True)
+    # Read in the data.
+    df = pd.read_json(input_file_path, lines=True)
+    iso_codes = df["iso_code"].unique()
+    df.set_index("iso_code", inplace=True)
 
-    # Get scores per language
+    # Get the evaluation metrics per language.
     scores = []
-    for language in languages:
+    for iso_code in iso_codes:
 
-        # Get the predictions and labels for `language`.
-        predictions = df.loc[language]["label"]
+        # Get the predictions and labels for the language with `iso_code`.
+        predictions = df.loc[iso_code]["label"]
         
-        lang_df = pd.read_table(f"data/{language}.tst", names=["lemma", "features", "target"])
-        labels = lang_df["target"]
+        label_df = pd.read_table(f"data/{iso_code}.tst", names=["lemma", "features", "target"])
+        labels = label_df["target"]
 
         # Compute the average exact match accuracy.
         evaluator = ExactMatchStringEvaluator()
@@ -40,7 +63,7 @@ if __name__ == "__main__":
             zip(predictions, labels)
             )))
         
-        # Compute Levenshtein distance.
+        # Compute the average Levenshtein distance.
         levenshtein_evaluator = load_evaluator(
             "string_distance",
             distance='levenshtein'
@@ -51,14 +74,27 @@ if __name__ == "__main__":
             zip(predictions, labels)
         )))
 
-        # Save score to dictionary.
-        scores.append((language, avg_accuracy, avg_levensthein_distance))
+        # Save scores with the iso_code as a triple.
+        scores.append((iso_code, avg_accuracy, avg_levensthein_distance))
 
-    # Save and print the results.
+    # Save the results.
     df = pd.DataFrame(scores, columns=["iso_code", "accuracy", "levenshtein"])
-    df.to_json(args.output_file_path, lines=True, orient="records")
+    df.to_json(output_file_path, lines=True, orient="records")
     
-    print(df.sort_values("accuracy", ascending=False))
+    # Print the results with the full names and sorted from high to low.
+    iso2name = {
+        "amh": "Amharic", "arz": "Arabic (Egyptian)", "dan": "Danish",
+        "eng": "English", "fin": "Finnish", "fra": "French",
+        "grc": "Ancient Greek", "heb": "Hebrew", "hun": "Hungarian",
+        "hye": "Armenian", "ita": "Italian", "jap": "Japanese",
+        "kat": "Georgian", "mkd": "Macedonian", "rus": "Russian",
+        "spa": "Spanish", "swa": "Swahili", "tur": "Turkish", "nav": "Navajo",
+        "afb": "Arabic (Gulf)", "sqi": "Albanian", "deu": "German",
+        "sme": "Sami", "bel": "Belarusian", "klr": "Khaling", "san": "Sanskrit"
+        }
+    df.insert(1, "language", df["iso_code"].apply(lambda x: iso2name[x]))
+
+    print(df.sort_values("accuracy", ascending=False, ignore_index=True))
     print("Average accuracy: ", df["accuracy"].mean())
     print("Average Levenshtein distance: ", df["levenshtein"].mean())
 

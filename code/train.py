@@ -1,28 +1,67 @@
-from transformers import AutoTokenizer, T5ForConditionalGeneration, DataCollatorForSeq2Seq, Seq2SeqTrainingArguments, Seq2SeqTrainer, EarlyStoppingCallback
-from datasets import Dataset, DatasetDict
+"""
+This program implements a ByT5 model.
+The model is fine-tuned on the task of morphological (re-)inflection
+and evaluated on exact match accuracy and Levenshtein distance.
+The program logs the results and outputs a file with the predictions.
+
+Author: Frieso Turkstra
+Date: 2024/03/30
+"""
+
+from langchain.evaluation import ExactMatchStringEvaluator
+from langchain.evaluation import load_evaluator
+from datasets import DatasetDict
+from datasets import Dataset
 import pandas as pd
-import argparse
 import numpy as np
-from langchain.evaluation import load_evaluator, ExactMatchStringEvaluator
+import argparse
 import os
 import torch
 import logging
+from transformers import (
+    AutoTokenizer, 
+    T5ForConditionalGeneration,
+    DataCollatorForSeq2Seq, 
+    Seq2SeqTrainingArguments,
+    Seq2SeqTrainer, 
+    EarlyStoppingCallback,
+)
 
 
 def create_arg_parser():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--languages", "-l", required=False, nargs="+", help="List of Wals-codes to be trained on.", type=str)
-    parser.add_argument("--model_size", "-ms", required=False, help="Size of the byT5 model.", type=str, default="base", choices=["small", "base", "large", "xl", "xxl"])
-    parser.add_argument("--remove_features", "-rf", required=False, help="Train without the features.", action="store_true")
-    parser.add_argument("--output_file_path", "-o", required=False, help="Path to output file.", type=str, default="predictions.jsonl")
-    
+    parser.add_argument("--iso_codes", "-ic",
+                        required=False,
+                        help="List of iso-codes to be trained on.",
+                        type=str,
+                        nargs="+",
+                        )
+    parser.add_argument("--model_size", "-ms",
+                        required=False,
+                        help="Size of the ByT5 model.",
+                        type=str,
+                        default="base",
+                        choices=["small", "base", "large", "xl", "xxl"],
+                        )
+    parser.add_argument("--output_file_path", "-o",
+                        required=False,
+                        help="Path to the output file.",
+                        type=str,
+                        default="model_predictions.jsonl",
+                        )
+    parser.add_argument("--remove_features", "-rf",
+                        required=False,
+                        help="Train without the features.",
+                        action="store_true",
+                        )
     args = parser.parse_args()
     return args
 
 
-def preprocess(file_path, language, remove_features):
-    # Read in the data, lemma and features are combined into one input column.
+def preprocess(file_path, iso_code, remove_features):
+
+    # Read in the data - lemma and features are combined into one input column.
     df = pd.read_table(file_path, names=["lemma", "features", "target"])
 
     df["input"] = task_prefix + df["lemma"]
@@ -33,12 +72,13 @@ def preprocess(file_path, language, remove_features):
     df["target"] = df["target"] + tokenizer.eos_token
 
     # Add language column so we can shuffle and still evaluate per language.
-    df["language"] = language
+    df["iso_code"] = iso_code
 
     return df
 
 
 def tokenize(examples, tokenizer, max_source_length, max_target_length):
+
     # Encode the inputs.
     encoding = tokenizer(
         examples["input"],
@@ -61,7 +101,7 @@ def tokenize(examples, tokenizer, max_source_length, max_target_length):
 
     labels = target_encoding.input_ids
 
-    # Replace padding token id's of the labels by -100 so it's ignored by the loss.
+    # Replace padding token id's of labels by -100 so it's ignored by the loss.
     labels[labels == tokenizer.pad_token_id] = -100
 
     return {
@@ -72,6 +112,8 @@ def tokenize(examples, tokenizer, max_source_length, max_target_length):
 
 
 def compute_metrics(eval_pred):
+
+    # Decode the predictions.
     predictions, labels = eval_pred
     decoded_preds = tokenizer.batch_decode(predictions, skip_special_tokens=True)
     
@@ -106,14 +148,13 @@ def fine_tune(model_name, tokenizer, tokenized_datasets):
     # Load the model.
     model = T5ForConditionalGeneration.from_pretrained(model_name)
 
+    # Specify training arguments.
     train_args = Seq2SeqTrainingArguments(
         output_dir=model_name,
         evaluation_strategy="epoch",
-        #eval_steps=100,
         logging_strategy="steps",
         logging_steps=1000,
         save_strategy="epoch",
-        #save_steps=200,
         learning_rate=1e-4,
         per_device_train_batch_size=8,
         per_device_eval_batch_size=8,
@@ -152,15 +193,13 @@ def fine_tune(model_name, tokenizer, tokenized_datasets):
     
 
 def test(model_path, test_tokenized_dataset, max_length):
-    # Load the best model.
-    model = T5ForConditionalGeneration.from_pretrained(model_path)
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    model = model.to(device)
+    # Load the best model and set it in evaluation mode.
+    model = T5ForConditionalGeneration.from_pretrained(model_path)
     model.eval()
 
     # Prepare dataloader.
-    test_tokenized_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
+    test_tokenized_dataset.set_format(type="torch", columns=["input_ids", "attention_mask"])
     dataloader = torch.utils.data.DataLoader(test_tokenized_dataset, batch_size=32)
 
     # Generate text for each batch.
@@ -189,8 +228,11 @@ if __name__ == "__main__":
     args = create_arg_parser()
     model_name = "google/byt5-" + args.model_size
     remove_features = args.remove_features
-    all_languages = ["amh", "arz", "dan", "eng", "fin", "fra", "grc", "heb", "hun", "hye", "ita", "jap", "kat", "mkd", "rus", "spa", "swa", "tur", "nav", "afb", "sqi", "deu", "sme", "bel", "klr", "san"]
-    languages = args.languages if args.languages else all_languages
+    all_iso_codes = [
+        "amh", "arz", "dan", "eng", "fin", "fra", "grc", "heb", "hun", "hye", "ita", "jap", "kat",
+        "mkd", "rus", "spa", "swa", "tur", "nav", "afb", "sqi", "deu", "sme", "bel", "klr", "san",
+    ]
+    iso_codes = args.iso_codes if args.iso_codes else all_iso_codes
     output_file_path = args.output_file_path
     
     # Set up logging.
@@ -199,9 +241,7 @@ if __name__ == "__main__":
     # Load tokenizer.
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-    # Some hyperparameters
-    # task prefix is not important in single-task finetuning unless it is related
-    # to a task seen in training. (see sigmorphon.py/tasks.py in byt5 github)
+    # Set certain variables needed for tokenization.
     task_prefix = ""
     max_source_length = 128
     max_target_length = 64
@@ -212,7 +252,10 @@ if __name__ == "__main__":
     datasets = DatasetDict()
 
     for split in ("trn", "dev", "tst"):
-        df = pd.concat([preprocess(f"data/{lang}.{split}", lang, remove_features) for lang in languages], ignore_index=True)
+        df = pd.concat(
+            [preprocess(f"data/{iso_code}.{split}", iso_code, remove_features) for iso_code in iso_codes],
+            ignore_index=True
+            )
         datasets[split] = Dataset.from_pandas(df)
 
     tokenized_datasets = datasets.map(
@@ -225,7 +268,9 @@ if __name__ == "__main__":
     
     # Only keep columns needed for training: input_ids, attention_mask, labels.
     for split in tokenized_datasets:
-        tokenized_datasets[split] = tokenized_datasets[split].remove_columns(["lemma", "features", "target", "input", "language"])
+        tokenized_datasets[split] = tokenized_datasets[split].remove_columns(
+            ["lemma", "features", "target", "input", "iso_code"]
+            )
 
     # Finetune and test the model.
     print("Fine tuning...")
@@ -235,7 +280,10 @@ if __name__ == "__main__":
     results, predictions = test(f"{model_name}/best", tokenized_datasets["tst"], max_length)
 
     # Save results/predictions.
-    predictions_df = pd.DataFrame({"label": predictions, "language": datasets["tst"]["language"]})
+    predictions_df = pd.DataFrame({
+        "label": predictions,
+        "iso_code": datasets["tst"]["iso_code"]
+        })
     predictions_df.to_json(output_file_path, lines=True, orient="records")
     print("Successfully saved predictions!")
     print(results)
