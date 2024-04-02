@@ -1,6 +1,8 @@
 # universal_word_inflector
 
-## Dependencies
+## Data and Dependencies
+
+The training data can be downloaded from: https://github.com/sigmorphon/2023InflectionST/tree/main/part1/data
 
 Run the following command to install the necessary dependencies:
 
