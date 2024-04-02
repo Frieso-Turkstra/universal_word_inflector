@@ -1,0 +1,16 @@
+{"feature":"2 Core cases only","coefficient":0.0700562229}
+{"feature":"5 Weakly prefixing","coefficient":0.0490885937}
+{"feature":"1 No case marking","coefficient":0.0387259987}
+{"feature":"1 Exclusively concatenative","coefficient":0.0227402252}
+{"feature":"3 Not syncretic","coefficient":0.0198111849}
+{"feature":"2 Full reduplication only","coefficient":0.0123776302}
+{"feature":"1 No subject person\/number marking","coefficient":0.0123776302}
+{"feature":"3 No productive reduplication","coefficient":0.0076138512}
+{"feature":"6 Strong prefixing","coefficient":-1.387778781e-17}
+{"feature":"3 Weakly suffixing","coefficient":-0.0172416306}
+{"feature":"1 Productive full and partial reduplication","coefficient":-0.0199914814}
+{"feature":"6 Ablaut\/concatenative","coefficient":-0.0227402252}
+{"feature":"2 Strongly suffixing","coefficient":-0.0318469631}
+{"feature":"2 Syncretic","coefficient":-0.0321888151}
+{"feature":"4 No syncretism","coefficient":-0.0518384445}
+{"feature":"3 Core and non-core","coefficient":-0.0569437771}
