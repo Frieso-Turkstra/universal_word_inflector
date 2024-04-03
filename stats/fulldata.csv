@@ -1,0 +1,15 @@
+﻿wals_code;iso_code;glottocode;Name;latitude;longitude;genus;family;macroarea;countrycodes;X20A;X26A;X27A;X28A;X29A;nofeatures;sharedtask;byt5;trainingsetsize
+aeg;arz;egyp1253;Arabic (Egyptian);30.0;31.0;Semitic;Afro-Asiatic;Africa;EG;6;3;1;1;2;0.33;0.896;0.716;57.0
+eng;eng;stan1293;English;52.0;0.0;Germanic;Indo-European;Eurasia;IE GB;1;2;3;2;2;0.346;0.966;0.974;2733.0
+fin;fin;finn1318;Finnish;62.0;25.0;Finnic;Uralic;Eurasia;FI;1;2;3;3;3;0.019;0.861;0.880;25.0
+fre;fra;stan1290;French;48.0;2.0;Romance;Indo-European;Eurasia;CH FR;1;2;3;3;2;0.034;0.777;0.813;318.0
+geo;kat;nucl1302;Georgian;42.0;44.0;Kartvelian;Kartvelian;Eurasia;GE;1;3;1;3;3;0.043;0.847;0.886;2.5
+ger;deu;stan1295;German;52.0;10.0;Germanic;Indo-European;Eurasia;AT CH DE;1;2;3;3;2;0.278;0.837;0.881;347.0
+heb;heb;hebr1245;Hebrew (Modern);31.5;34.8333333333;Semitic;Afro-Asiatic;Eurasia;IL;6;3;1;1;2;0.0372608258;0.837;0.884;17.0
+hun;hun;hung1274;Hungarian;47.0;20.0;Ugric;Uralic;Eurasia;HU;1;2;1;4;3;0.014;0.850;0.791;39.0
+jpn;jpn;nucl1643;Japanese;37.0;140.0;Japanese;Japanese;Eurasia;JP;1;2;2;1;1;0.06;0.953;0.992;164.0
+nav;nav;nava1243;Navajo;36.1666666667;-108.0;Athapaskan;Na-Dene;North America;US;1;6;3;1;3;0.036;0.556;0.599;0
+rus;rus;russ1263;Russian;56.0;38.0;Slavic;Indo-European;Eurasia;RU;1;2;3;3;3;0.076;0.905;0.918;713.0
+spa;spa;stan1288;Spanish;40.0;-4.0;Romance;Indo-European;Eurasia;ES;1;2;3;3;2;0.026;0.938;0.944;433.0
+swa;swh;swah1253;Swahili;-6.5;39.0;Bantoid;Niger-Congo;Africa;TZ;1;5;1;1;2;0.001;0.966;0.996;1.0
+tur;tur;nucl1301;Turkish;39.0;35.0;Turkic;Altaic;Eurasia;TR;1;2;1;4;3;0.006;0.950;0.962;71.0
