@@ -10,19 +10,20 @@ Run the following command to install the necessary dependencies:
 pip install -r requirements.txt
 ```
 
-## Fine-tune ByT5 
+## Fine-tuning and inference with ByT5 
 
 ### Overview
-This program fine-tunes a ByT5 model on the task of morphological inflection. The fine-tuned model is saved and evaluated on exact match accuracy and Levenshtein distance. The program logs the results and outputs a file with the predictions.
+This program fine-tunes a ByT5 model on the task of morphological inflection. The fine-tuned model is saved and evaluated on exact match accuracy and Levenshtein distance. The program logs the results and outputs a file with the predictions. It is also possible to run the program in inference-only mode, which skips the fine-tuning and can be used to predict unseen data with an already fine-tuned model.
 
 ### Command
 
 ```sh
-python code/train.py --iso_codes spa tur swa --model_size small --output_file_path model_predictions_small.jsonl
+python code/train.py --iso_codes spa tur swa --model google/byt5-small --output_file_path model_predictions_small.jsonl
 ```
 
 - **--iso_codes**: [optional] Iso-codes of languages on which the model will be trained, defaults to all languages of the shared task. 
-- **--model_size**: [optional] Size of the byT5 model, options are small, base, large, xl, xxl, defaults to base.
+- **--model**: [optional] T5 model used for fine-tuning and/or inference, defaults to "google/byt5-base".
+-**--inference_only**: [optional] Skip the fine-tuning phase. 
 - **--remove_features**: [optional] Train with only the lemma as input.
 - **--output_file_path**: [optional] Path to which the predictions will be saved, defaults to "model_predictions.jsonl".
 
