@@ -34,12 +34,11 @@ def create_arg_parser():
                         type=str,
                         nargs="+",
                         )
-    parser.add_argument("--model_size", "-ms",
+    parser.add_argument("--model", "-m",
                         required=False,
-                        help="Size of the ByT5 model.",
+                        help="The T5 model to fine-tune and/or test.",
                         type=str,
-                        default="base",
-                        choices=["small", "base", "large", "xl", "xxl"],
+                        default="google/byt5-base",
                         )
     parser.add_argument("--output_file_path", "-o",
                         required=False,
@@ -50,6 +49,11 @@ def create_arg_parser():
     parser.add_argument("--remove_features", "-rf",
                         required=False,
                         help="Train without the features.",
+                        action="store_true",
+                        )
+    parser.add_argument("--inference_only", "-io",
+                        required=False,
+                        help="Skip fine-tuning and only predict.",
                         action="store_true",
                         )
     args = parser.parse_args()
@@ -223,8 +227,9 @@ if __name__ == "__main__":
 
     # Extract command line arguments.
     args = create_arg_parser()
-    model_name = "google/byt5-" + args.model_size
+    model_name = args.model
     remove_features = args.remove_features
+    inference_only = args.inference_only
     all_iso_codes = [
         "amh", "arz", "dan", "eng", "fin", "fra", "grc", "heb", "hun", "hye", "ita", "jap", "kat",
         "mkd", "rus", "spa", "swa", "tur", "nav", "afb", "sqi", "deu", "sme", "bel", "klr", "san",
@@ -269,12 +274,16 @@ if __name__ == "__main__":
             ["lemma", "features", "target", "input", "iso_code"]
             )
 
-    # Finetune and test the model.
-    print("Fine tuning...")
-    fine_tune(model_name, tokenizer, tokenized_datasets)
+    # Finetune and test the model, skip fine-tuning if in inference-only mode.
+    if not inference_only:
+        print("Fine tuning...")
+        fine_tune(model_name, tokenizer, tokenized_datasets)
 
-    print("Predicting...")
-    results, predictions = test(f"{model_name}/best", tokenized_datasets["tst"], max_length)
+        print("Predicting...")
+        results, predictions = test(f"{model_name}/best", tokenized_datasets["tst"], max_length)
+    else:
+        print("Predicting...")
+        results, predictions = test(model_name, tokenized_datasets["tst"], max_length)
 
     # Save results/predictions.
     predictions_df = pd.DataFrame({
