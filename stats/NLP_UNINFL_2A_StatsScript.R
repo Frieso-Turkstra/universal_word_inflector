@@ -8,14 +8,14 @@ pacman:: p_load(car, readr, tidytext, dplyr,scales, ggplot2, stringr, textdata,
 
 #Importing data
 #all the data we have
-fulldata <- read.csv("~/fulldata.csv", sep=";")
+fulldata <- read.csv("fulldata.csv", sep=";")
 #factorising the language families to allow for group comparisons in ANOVA
 fulldata$family <- as.factor(fulldata$family)
 
 #scores obtained by the shared task, by ByT5 when trained on the features, 
 #and by ByT5 when not trained on the features
 #used to do check homoscedasticity for group comparisons (Levene's test)
-scores_permodel <- read.csv("~/scores_permodel.csv", sep=";")
+scores_permodel <- read.csv("scores_permodel.csv", sep=";")
 
 ################################################################################
 ###################          Comparing performances          ###################
