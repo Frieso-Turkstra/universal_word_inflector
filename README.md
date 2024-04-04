@@ -72,3 +72,8 @@ python code/regression.py --accuracy_file_path scores_small.jsonl --features_fil
 - **--accuracy_file_path**: [required] Path to the file with the accuracy scores.
 - **--features_file_path**: [required] Path to the file with the features.
 - **--plot**: [optional] Plot the cross-validated predictions vs. actual values.
+
+## Statistical Analysis (stats folder)
+The code for statistical analysis has been written in R. To run it, open the file NLP_UNINFL_2A_StatsScript.R in RStudio. 
+Data: Make sure that the files fulldata.csv and scores_permodel.csv are in the same folder as the R script.
+Packages: pacman::p_load on the first line takes care of installing and updating the necessary packages.
