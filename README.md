@@ -75,5 +75,7 @@ python code/regression.py --accuracy_file_path scores_small.jsonl --features_fil
 
 ## Statistical Analysis (stats folder)
 The code for statistical analysis has been written in R. To run it, open the file NLP_UNINFL_2A_StatsScript.R in RStudio. 
-Data: Make sure that the files fulldata.csv and scores_permodel.csv are in the same folder as the R script.
-Packages: pacman::p_load on the first line takes care of installing and updating the necessary packages.
+
+**Data:** Make sure that the files fulldata.csv and scores_permodel.csv are in the same folder as the R script.
+
+**Packages:** pacman::p_load on the first line takes care of installing and updating the necessary packages.
